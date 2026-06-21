@@ -16,8 +16,8 @@ signal game_loaded(success: bool, data: Dictionary)
 # Configure these variables according to your dashboard settings
 const API_BASE_URL = "https://gwynbleidd.pl" # Change to your API address
 var GAME_ID: int = 1 # Your actual Game ID from the dashboard
-var API_KEY = "ww_key_71ab0ff88fede4ea982dcedc57f047bfd33fcea59f8ec1279317fad398f2367af2e41b233d6905e8be5e76ef7737f0f073aba1a6"
-var API_SECRET = "gw_secret_f42974150aef39118b5411af32286cf420869e90168eaee284931d0c62c898a6416378f88f" 
+var API_KEY = "ww_key_"
+var API_SECRET = "gw_secret_" 
 
 # Stores the session token of the logged-in player (if Require Authentication is enabled)
 var player_token: String = ""
