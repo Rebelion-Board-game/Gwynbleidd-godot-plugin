@@ -7,6 +7,11 @@ signal player_registered(success: bool, response_data: Dictionary)
 signal player_logged_in(success: bool, response_data: Dictionary)
 signal score_submitted(success: bool, response_data: Dictionary)
 signal leaderboard_loaded(success: bool, scores: Array)
+signal game_saved(success: bool, response_data: Dictionary)
+signal game_loaded(success: bool, data: Dictionary)
+
+#const API_BASE_URL = "http://localhost:4443" # For tests
+
 
 # Configure these variables according to your dashboard settings
 const API_BASE_URL = "https://gwynbleidd.pl" # Change to your API address
@@ -155,3 +160,42 @@ func _on_leaderboard_loaded(result: int, response_code: int, headers: PackedStri
 	else:
 		push_error("Failed to retrieve leaderboard.")
 		emit_signal("leaderboard_loaded", false, [])
+
+
+# =====================================================================
+# SECTION 3: SAVE DATA SYSTEM
+# =====================================================================
+
+# Sends a Dictionary containing game state data to the cloud save endpoint
+func save_game_data(game_state: Dictionary) -> void:
+	var url = API_BASE_URL + "/api/godot/" + str(GAME_ID) + "/save"
+	var payload = {
+		"data": game_state
+	}
+	_make_request(url, HTTPClient.METHOD_POST, payload, "_on_game_saved_completed")
+
+func _on_game_saved_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http_node: HTTPRequest) -> void:
+	http_node.queue_free()
+	var response = JSON.parse_string(body.get_string_from_utf8())
+	
+	if response_code == 200:
+		emit_signal("game_saved", true, response if response else {})
+	else:
+		var error_msg = response.get("detail", "Failed to save game data") if response else "Network error"
+		push_error("Save data error: " + error_msg)
+		emit_signal("game_saved", false, {"error": error_msg})
+
+# Fetches the last saved cloud state for the authenticated player
+func load_game_data() -> void:
+	var url = API_BASE_URL + "/api/godot/" + str(GAME_ID) + "/save"
+	_make_request(url, HTTPClient.METHOD_GET, {}, "_on_game_loaded_completed")
+
+func _on_game_loaded_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http_node: HTTPRequest) -> void:
+	http_node.queue_free()
+	var response = JSON.parse_string(body.get_string_from_utf8())
+	
+	if response_code == 200 and response != null:
+		emit_signal("game_loaded", true, response)
+	else:
+		push_error("Failed to load game data from cloud.")
+		emit_signal("game_loaded", false, {})
